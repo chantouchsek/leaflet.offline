@@ -227,7 +227,7 @@ var ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
    */
   setStorageSize: function setStorageSize(callback) {
     var self = this;
-    if (this.status.storagesize) {
+    if (this.status.storagesize && typeof callback === 'function') {
       callback(this.status.storagesize);
       return;
     }
@@ -235,7 +235,7 @@ var ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
       .then(function (numberOfKeys) {
         self.status.storagesize = numberOfKeys;
         self._baseLayer.fire('storagesize', self.status);
-        if (callback) {
+        if (callback && typeof callback === 'function') {
           callback(numberOfKeys);
         }
       })
