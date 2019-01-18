@@ -15,11 +15,11 @@ import localforage from './localforage';
 
 
 /**
-* Shows control on map to save tiles
-* @class ControlSaveTiles
-*
-* @property {ControlStatus} status
-*/
+ * Shows control on map to save tiles
+ * @class ControlSaveTiles
+ *
+ * @property {ControlStatus} status
+ */
 const ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
   options: {
     position: 'topleft',
@@ -39,11 +39,11 @@ const ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
     _tilesforSave: null,
   },
   /**
-     * @private
-     * @param  {Object} baseLayer
-     * @param  {Object} options
-     * @return {void}
-     */
+   * @private
+   * @param  {Object} baseLayer
+   * @param  {Object} options
+   * @return {void}
+   */
   initialize(baseLayer, options) {
     this._baseLayer = baseLayer;
     this.setStorageSize();
@@ -60,16 +60,18 @@ const ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
       callback(this.status.storagesize);
       return;
     }
-    localforage.length().then((numberOfKeys) => {
-      self.status.storagesize = numberOfKeys;
-      self._baseLayer.fire('storagesize', self.status);
-      if (callback) {
-        callback(numberOfKeys);
-      }
-    }).catch((err) => {
-      callback(0);
-      throw err;
-    });
+    localforage.length()
+      .then((numberOfKeys) => {
+        self.status.storagesize = numberOfKeys;
+        self._baseLayer.fire('storagesize', self.status);
+        if (callback) {
+          callback(numberOfKeys);
+        }
+      })
+      .catch((err) => {
+        callback(0);
+        throw err;
+      });
   },
   /**
    * get number of saved files
@@ -202,33 +204,36 @@ const ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
    * Loop over status._tilesforSave prop till all tiles are downloaded
    * Calls _saveTile for each download
    * @private
-   * @param  {string} tileUrl
    * @return {void}
    */
   _loadTile() {
     const self = this;
     const tileUrl = self.status._tilesforSave.shift();
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', tileUrl.url);
-    xhr.responseType = 'blob';
-    xhr.send();
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === XMLHttpRequest.DONE && (xhr.status >= 200 && xhr.status <= 300)) {
-        self.status.lengthLoaded += 1;
-        self._saveTile(tileUrl.key, xhr.response);
-        if (self.status._tilesforSave.length > 0) {
-          self._loadTile();
-          self._baseLayer.fire('loadtileend', self.status);
-        } else {
-          self._baseLayer.fire('loadtileend', self.status);
-          if (self.status.lengthLoaded === self.status.lengthToBeSaved) {
-            self._baseLayer.fire('loadend', self.status);
+    const oXHR = new XMLHttpRequest();
+
+    oXHR.open('GET', tileUrl.url, true);
+
+    oXHR.onreadystatechange = () => {
+      if (oXHR.readyState === 4) {
+        if (oXHR.status === 200) {
+          self.status.lengthLoaded += 1;
+          self._saveTile(tileUrl.key, oXHR.response);
+          if (self.status._tilesforSave.length > 0) {
+            self._loadTile();
+            self._baseLayer.fire('loadtileend', self.status);
+          } else {
+            self._baseLayer.fire('loadtileend', self.status);
+            if (self.status.lengthLoaded === self.status.lengthToBeSaved) {
+              self._baseLayer.fire('loadend', self.status);
+            }
           }
+        } else {
+          throw new Error((`Request failed with status ${oXHR.status}`));
         }
-      } else {
-        throw new Error(`Request failed with status ${xhr.status}`);
       }
     };
+
+    oXHR.send(null);
   },
   /**
    * [_saveTile description]
@@ -239,29 +244,34 @@ const ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
    */
   _saveTile(tileUrl, blob) {
     const self = this;
-    localforage.removeItem(tileUrl).then(() => {
-      localforage.setItem(tileUrl, blob).then(() => {
-        self.status.lengthSaved += 1;
-        self._baseLayer.fire('savetileend', self.status);
-        if (self.status.lengthSaved === self.status.lengthToBeSaved) {
-          self._baseLayer.fire('saveend', self.status);
-          self.setStorageSize();
-        }
-      }).catch((err) => {
+    localforage.removeItem(tileUrl)
+      .then(() => {
+        localforage.setItem(tileUrl, blob)
+          .then(() => {
+            self.status.lengthSaved += 1;
+            self._baseLayer.fire('savetileend', self.status);
+            if (self.status.lengthSaved === self.status.lengthToBeSaved) {
+              self._baseLayer.fire('saveend', self.status);
+              self.setStorageSize();
+            }
+          })
+          .catch((err) => {
+            throw new Error(err);
+          });
+      })
+      .catch((err) => {
         throw new Error(err);
       });
-    }).catch((err) => {
-      throw new Error(err);
-    });
   },
   _rmTiles() {
     const self = this;
     const successCallback = () => {
-      localforage.clear().then(() => {
-        self.status.storagesize = 0;
-        self._baseLayer.fire('tilesremoved');
-        self._baseLayer.fire('storagesize', self.status);
-      });
+      localforage.clear()
+        .then(() => {
+          self.status.storagesize = 0;
+          self._baseLayer.fire('tilesremoved');
+          self._baseLayer.fire('storagesize', self.status);
+        });
     };
     if (this.options.confirmRemoval) {
       this.options.confirmRemoval(this.status, successCallback);
@@ -271,19 +281,19 @@ const ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
   },
 });
 /**
-* @function L.control.savetiles
-* @param  {object} baseLayer     {@link http://leafletjs.com/reference-1.2.0.html#tilelayer}
-* @property {Object} options
-* @property {string} [options.position] default topleft
-* @property {string} [options.saveText] html for save button, default +
-* @property {string} [options.rmText] html for remove button, deflault -
-* @property {number} [options.maxZoom] maximum zoom level that will be reached
-* when saving tiles with saveWhatYouSee. Default 19
-* @property {boolean} [options.saveWhatYouSee] save the tiles that you see
-* on screen plus deeper zooms, ignores zoomLevels options. Default false
-* @property {function} [options.confirm] function called before confirm, default null.
-* Args of function are ControlStatus and callback.
-* @property {function} [options.confirmRemoval] function called before confirm, default null
-* @return {ControlSaveTiles}
-*/
+ * @function L.control.savetiles
+ * @param  {object} baseLayer     {@link http://leafletjs.com/reference-1.2.0.html#tilelayer}
+ * @property {Object} options
+ * @property {string} [options.position] default topleft
+ * @property {string} [options.saveText] html for save button, default +
+ * @property {string} [options.rmText] html for remove button, deflault -
+ * @property {number} [options.maxZoom] maximum zoom level that will be reached
+ * when saving tiles with saveWhatYouSee. Default 19
+ * @property {boolean} [options.saveWhatYouSee] save the tiles that you see
+ * on screen plus deeper zooms, ignores zoomLevels options. Default false
+ * @property {function} [options.confirm] function called before confirm, default null.
+ * Args of function are ControlStatus and callback.
+ * @property {function} [options.confirmRemoval] function called before confirm, default null
+ * @return {ControlSaveTiles}
+ */
 L.control.savetiles = (baseLayer, options) => new ControlSaveTiles(baseLayer, options);

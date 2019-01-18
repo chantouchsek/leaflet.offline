@@ -1,4 +1,4 @@
-leaflet.offline
+leaflet-offline-2
 ===============
 
 [![npm version](https://badge.fury.io/js/leaflet.offline.svg)](https://badge.fury.io/js/leaflet.offline)
@@ -29,12 +29,12 @@ The package and it's dependencies can also be downloaded into
 your existing project with [npm](http://npmjs.com):
 
 ```
-npm install leaflet.offline
+npm install leaflet-offline-2
 ```
 In your script add:
 
 ```
-import 'leaflet.offline'
+import 'leaflet-offline-2'
 ```
 
 ### Development
