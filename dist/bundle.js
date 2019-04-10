@@ -298,6 +298,7 @@ var ControlSaveTiles = L.Control.extend(/** @lends ControlSaveTiles */ {
   _createButton: function _createButton(html, className, container, fn) {
     var link = L.DomUtil.create('a', className, container);
     link.innerHTML = html;
+    link.id = "click-" + className;
     link.href = '#';
 
     L.DomEvent
